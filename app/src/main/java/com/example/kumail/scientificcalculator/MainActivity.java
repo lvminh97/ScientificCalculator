@@ -1,13 +1,19 @@
 package com.example.kumail.scientificcalculator;
 
-import androidx.appcompat.app.AppCompatActivity;
-
 import android.os.Bundle;
 import android.text.SpannableStringBuilder;
 import android.view.View;
 import android.widget.EditText;
 import android.widget.TextView;
-import org.mariuszgromada.math.mxparser.*;
+import android.widget.Toast;
+
+import androidx.appcompat.app.AppCompatActivity;
+
+import org.mariuszgromada.math.mxparser.Expression;
+
+import java.text.DecimalFormat;
+import java.text.DecimalFormatSymbols;
+import java.util.Locale;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -111,16 +117,22 @@ public class MainActivity extends AppCompatActivity {
     public void equalBTNPush(View view){
         String userExp = display.getText().toString();
 
+        String finalExp = userExp.replaceAll(getResources().getString(R.string.divideText), "/");
+        finalExp = finalExp.replaceAll(getResources().getString(R.string.multiplyText), "*");
+        finalExp = finalExp.replaceAll("log[(]", "(1/ln(10))*ln(");
+
+        Expression exp = new Expression(finalExp);
+        double result = Double.parseDouble(String.valueOf(exp.calculate()));
+        if(Double.isNaN(result)) {
+            Toast.makeText(getBaseContext(), "The expression is not valid", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        String resultStr = (new DecimalFormat("#.########################", new DecimalFormatSymbols(Locale.US))).format(result);
+
         previousCalculation.setText(userExp);
-
-        userExp = userExp.replaceAll(getResources().getString(R.string.divideText), "/");
-        userExp = userExp.replaceAll(getResources().getString(R.string.multiplyText), "*");
-
-        Expression exp = new Expression(userExp);
-        String result = String.valueOf(exp.calculate());
-
-        display.setText(result);
-        display.setSelection(result.length());
+        display.setText(resultStr);
+        display.setSelection(resultStr.length());
     }
 
     public void backspaceBTNPush(View view){
