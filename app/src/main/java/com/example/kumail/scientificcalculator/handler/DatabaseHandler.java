@@ -50,7 +50,7 @@ public class DatabaseHandler extends SQLiteOpenHelper {
 
     public ArrayList<History> getAllHistory() {
         ArrayList<History> historyList = new ArrayList<History>();
-        String query = "SELECT * FROM " + TABLE_NAME;
+        String query = "SELECT * FROM " + TABLE_NAME + " ORDER BY " + KEY_ID + " DESC";
         SQLiteDatabase db = this.getWritableDatabase();
         Cursor cursor = db.rawQuery(query, null);
 
