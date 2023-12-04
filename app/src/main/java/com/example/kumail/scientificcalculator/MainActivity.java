@@ -3,22 +3,37 @@ package com.example.kumail.scientificcalculator;
 import android.os.Bundle;
 import android.text.SpannableStringBuilder;
 import android.view.View;
+import android.widget.AdapterView;
 import android.widget.EditText;
+import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.constraintlayout.widget.ConstraintLayout;
+
+import com.example.kumail.scientificcalculator.adapter.HistoryAdapter;
+import com.example.kumail.scientificcalculator.handler.DatabaseHandler;
+import com.example.kumail.scientificcalculator.model.History;
 
 import org.mariuszgromada.math.mxparser.Expression;
 
 import java.text.DecimalFormat;
 import java.text.DecimalFormatSymbols;
+import java.util.ArrayList;
 import java.util.Locale;
 
-public class MainActivity extends AppCompatActivity {
+public class MainActivity extends AppCompatActivity implements AdapterView.OnItemClickListener{
+
+    private DatabaseHandler databaseHandler;
 
     private TextView previousCalculation;
     private EditText display;
+
+    private boolean showHistory = false;
+    private ConstraintLayout historyLayout;
+    private ListView historyListView;
+    private HistoryAdapter historyAdapter;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -29,6 +44,12 @@ public class MainActivity extends AppCompatActivity {
         display = findViewById(R.id.displayEditText);
 
         display.setShowSoftInputOnFocus(false);
+
+        historyLayout = findViewById(R.id.layout_history);
+        historyListView = findViewById(R.id.listview_history);
+        historyListView.setOnItemClickListener(this);
+
+        databaseHandler = new DatabaseHandler(MainActivity.this);
     }
 
     private void updateText(String strToAdd){
@@ -128,11 +149,12 @@ public class MainActivity extends AppCompatActivity {
             return;
         }
 
-        String resultStr = (new DecimalFormat("#.########################", new DecimalFormatSymbols(Locale.US))).format(result);
+        String resultStr = (new DecimalFormat("#.#########", new DecimalFormatSymbols(Locale.US))).format(result);
 
         previousCalculation.setText(userExp);
         display.setText(resultStr);
         display.setSelection(resultStr.length());
+        databaseHandler.addHistory(new History(0, userExp, "=" + resultStr));
     }
 
     public void backspaceBTNPush(View view){
@@ -205,5 +227,33 @@ public class MainActivity extends AppCompatActivity {
 
     public void primeBTNPush(View view){
         updateText("ispr(");
+    }
+
+    public void historyBTNPush(View view) {
+        if(showHistory ==false) {
+            ArrayList<History> historyList = databaseHandler.getAllHistory();
+            historyAdapter = new HistoryAdapter(MainActivity.this, historyList);
+            historyListView.setAdapter(historyAdapter);
+            showHistory = true;
+            historyLayout.setVisibility(View.VISIBLE);
+        }
+        else {
+            showHistory = false;
+            historyLayout.setVisibility(View.INVISIBLE);
+        }
+    }
+
+    public void clearHistoryBTNPush(View view) {
+        databaseHandler.deleteAllHistory();
+        historyAdapter = new HistoryAdapter(MainActivity.this, new ArrayList<History>());
+        historyListView.setAdapter(historyAdapter);
+    }
+
+    @Override
+    public void onItemClick(AdapterView<?> adapterView, View view, int i, long l) {
+        History history = historyAdapter.getItem(i);
+        previousCalculation.setText(history.getExpression());
+        display.setText(history.getResult().substring(1));
+        display.setSelection(history.getResult().length() - 1);
     }
 }
